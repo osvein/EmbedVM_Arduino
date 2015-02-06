@@ -1,6 +1,6 @@
 #include <EEPROM.h>
 
-#include <embedvm.h>
+#include "embedvm.h"
 
 #define UNUSED __attribute__((unused))
 

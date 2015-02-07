@@ -12,8 +12,8 @@
 #define BAUDRATE 9600 //UART baudrate
 #define VERBOSE false //verbose mode
 
-boolean stop = false;
-byte memory[MEMORY_SIZE];
+boolean stop = false; //whether the VM should skip execution of program
+byte memory[MEMORY_SIZE]; //VM memory
 
 //put in seperate namespace to prevent Arduino IDE from preprocessing it; Arduino preprocessor is ST00PID
 namespace no {
@@ -26,9 +26,11 @@ namespace no {
 void setup()
 {
   Serial.begin(BAUDRATE);
+  
+  //copy program from EEPROM to RAM; EmbedVM can read program from RAM only
   for(int address = 0; address < PROGRAM_LENGTH; address++)
     memory[address] = EEPROM.read(address + PROGRAM_OFFSET);
-  embedvm_interrupt(&no::vm, PROGRAM_ENTRY);
+  embedvm_interrupt(&no::vm, PROGRAM_ENTRY); //start EmbedVM
 }
 
 void loop()
@@ -58,7 +60,7 @@ void loop()
   embedvm_exec(&no::vm); //execute next instruction
 }
 
-
+//callback used by EmbedVM to read memory
 static int16_t memoryRead(uint16_t address, bool is16bit, void *ctx UNUSED)
 {
   if (is16bit)
@@ -66,6 +68,7 @@ static int16_t memoryRead(uint16_t address, bool is16bit, void *ctx UNUSED)
   return memory[address];
 }
 
+//callback used by EmbedVM to write memory
 static void memoryWrite(uint16_t address, int16_t value, bool is16bit, void *ctx UNUSED)
 {
   if (is16bit) {
@@ -76,11 +79,13 @@ static void memoryWrite(uint16_t address, int16_t value, bool is16bit, void *ctx
     memory[address] = value;
 }
 
+//callback used by EmbedVM to call user functions
 static int16_t callUserFunction(uint8_t function, uint8_t argc, int16_t *argv, void *ctx UNUSED)
 {
   int16_t ret = 0;
   int i;
 
+  //user function ID 0 = stop
   if (function == 0) {
     stop = true;
     Serial.println("Called user function 0 => stop.");
@@ -88,8 +93,8 @@ static int16_t callUserFunction(uint8_t function, uint8_t argc, int16_t *argv, v
     return ret;
   }
 
+  //print user function call details (function ID, argument count, argument list)
   Serial.print("Called user function " + String(function) + " with " + String(argc) + " args:");
-
   for (i = 0; i < argc; i++) {
     Serial.print(" " + argv[i]);
     ret += argv[i];

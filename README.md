@@ -1,3 +1,3 @@
 # EmbedVM_Arduino
-Simple EmbedVM host on Arduino
-http://www.clifford.at/embedvm/
+Simple [EmbedVM](http://www.clifford.at/embedvm/) host on Arduino
+
